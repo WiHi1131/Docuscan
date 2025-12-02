@@ -1,0 +1,18 @@
+INVOICE
+
+Invoice Number: INV-2024-001
+Date: November 27, 2025
+
+Bill To:
+John Smith
+123 Main Street
+Denver, CO 80202
+
+Items:
+- Cloud Computing Services: $500.00
+- OCR Processing: $150.00
+- Data Storage: $75.00
+
+Total: $725.00
+
+Thank you for your business!

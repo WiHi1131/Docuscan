@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: docuscan-postgres
+    environment:
+      POSTGRES_DB: docuscan
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: docuscan-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Pub/Sub Emulator
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    container_name: docuscan-pubsub
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    environment:
+      PUBSUB_PROJECT_ID: docuscan-project
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: docuscan-api
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: docuscan
+      DB_USER: postgres
+      DB_PASSWORD: password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      GCP_PROJECT_ID: docuscan-project
+      PUBSUB_TOPIC: ocr-jobs
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      STORAGE_EMULATOR_HOST: http://fake-gcs-server:4443
+      GOOGLE_CLOUD_PROJECT: docuscan-project
+      GCS_UPLOAD_BUCKET: docuscan-uploads
+      GCS_RESULTS_BUCKET: docuscan-results
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+    volumes:
+      - ./api:/app/api
+      - ./local-storage:/app/storage
+
+  # Worker Service
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: docuscan-worker
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: docuscan
+      DB_USER: postgres
+      DB_PASSWORD: password
+      GCP_PROJECT_ID: docuscan-project
+      PUBSUB_SUBSCRIPTION: ocr-jobs-sub
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:8085
+      STORAGE_EMULATOR_HOST: http://fake-gcs-server:4443
+      GOOGLE_CLOUD_PROJECT: docuscan-project
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pubsub-emulator:
+        condition: service_started
+    volumes:
+      - ./worker:/app/worker
+      - ./local-storage:/app/storage
+
+volumes:
+  postgres_data:
+

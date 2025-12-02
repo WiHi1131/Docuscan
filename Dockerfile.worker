@@ -1,0 +1,29 @@
+# Dockerfile for DocuScan OCR Worker
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies including Tesseract OCR
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    poppler-utils \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements-worker.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements-worker.txt
+
+# Copy worker code
+COPY worker/ ./worker/
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Run the worker
+CMD ["python", "-u", "worker/worker.py"]
