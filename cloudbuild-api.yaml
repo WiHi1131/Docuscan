@@ -1,0 +1,11 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/docuscan-480222/docuscan-api'
+      - '-f'
+      - 'Dockerfile.api'
+      - '.'
+images:
+  - 'gcr.io/docuscan-480222/docuscan-api'

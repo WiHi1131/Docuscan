@@ -1,0 +1,11 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/docuscan-480222/docuscan-worker'
+      - '-f'
+      - 'Dockerfile.worker'
+      - '.'
+images:
+  - 'gcr.io/docuscan-480222/docuscan-worker'

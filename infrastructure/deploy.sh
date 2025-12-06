@@ -96,8 +96,9 @@ gcloud redis instances create docuscan-cache \
 # Build and push API container
 print_step "Building and pushing API container..."
 gcloud builds submit \
-    --tag gcr.io/$PROJECT_ID/$API_SERVICE_NAME \
-    --file Dockerfile.api .
+    --config ../cloudbuild-api.yaml \
+    --timeout=20m \
+    ..
 
 # Deploy API to Cloud Run
 print_step "Deploying API to Cloud Run..."
@@ -115,8 +116,9 @@ gcloud run deploy $API_SERVICE_NAME \
 # Build and push Worker container
 print_step "Building and pushing Worker container..."
 gcloud builds submit \
-    --tag gcr.io/$PROJECT_ID/$WORKER_JOB_NAME \
-    --file Dockerfile.worker .
+    --config ../cloudbuild-worker.yaml \
+    --timeout=20m \
+    ..
 
 # Deploy Worker as Cloud Run Job
 print_step "Deploying Worker as Cloud Run Job..."

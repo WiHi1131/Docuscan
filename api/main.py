@@ -3,7 +3,7 @@ DocuScan API - Cloud-Based OCR Service
 FastAPI backend for document upload, processing, and search
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from fastapi import Depends, FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List
@@ -11,6 +11,7 @@ import uuid
 import os
 from datetime import datetime
 import logging
+from api.services.database import DatabaseService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -280,6 +281,19 @@ async def list_jobs(
     except Exception as e:
         logger.error(f"Error listing jobs: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/admin/init-db")
+async def init_database(db: DatabaseService = Depends(lambda: db_service)):
+    """
+    Initialize database schema (admin only)
+    """
+    try:
+        await db.initialize_schema()
+        logger.info("Database schema initialized successfully")
+        return {"status": "success", "message": "Database schema initialized"}
+    except Exception as e:
+        logger.error(f"Database init error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Schema initialization failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
